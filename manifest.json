@@ -1,9 +1,16 @@
 {
 	"manifest_version": 3,
-	"name": "Sabi Fill",
+	"name": "Password Manager",
 	"version": "1.0",
-	"description": "Fills form fields with fake test data.",
-	"permissions": ["scripting", "activeTab", "storage"],
+	"description": "A secure password manager with cross-browser sync capabilities",
+	"permissions": [
+		"storage",
+		"activeTab",
+		"tabs",
+		"scripting",
+		"identity",
+		"contextMenus"
+	],
 	"host_permissions": ["<all_urls>"],
 	"background": {
 		"service_worker": "background.js",
@@ -11,18 +18,35 @@
 	},
 	"action": {
 		"default_popup": "popup.html",
+		"default_title": "SecureVault Password Manager",
 		"default_icon": "icon.png"
 	},
 	"content_scripts": [
 		{
 			"matches": ["<all_urls>"],
 			"js": ["content.js"],
-			"type": "module"
+			"type": "module",
+			"run_at": "document_end"
 		}
 	],
+	"commands": {
+		"fill-form": {
+			"suggested_key": {
+				"default": "Ctrl+Shift+F",
+				"mac": "Command+Shift+F"
+			},
+			"description": "Fill the current form"
+		}
+	},
 	"icons": {
 		"16": "icon-16.png",
 		"48": "icon-48.png",
 		"128": "icon-128.png"
-	}
+	},
+	"web_accessible_resources": [
+		{
+			"resources": ["inject.js"],
+			"matches": ["http://*/*", "https://*/*"]
+		}
+	]
 }
