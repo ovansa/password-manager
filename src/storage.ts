@@ -2,7 +2,7 @@ import { cryptoService } from './crypto';
 import { PasswordEntry, StorageData, UserSettings, VaultData } from './types';
 
 export class StorageService {
-	private browser: any;
+	private browser = (globalThis as any).browser || (globalThis as any).chrome;
 	private static readonly STORAGE_KEYS = {
 		VAULT: 'vault_data',
 		SESSION: 'session_data',

@@ -9,6 +9,7 @@ class BackgroundService {
 	private browser: any;
 
 	constructor() {
+		this.browser = (globalThis as any).browser || (globalThis as any).chrome;
 		this.initializeListeners();
 		this.checkLockStatus();
 	}
@@ -45,11 +46,15 @@ class BackgroundService {
 			}
 		});
 
-		this.browser.alarms.onAlarm.addListener((alarm) => {
-			if (alarm.name === 'auto-lock') {
-				this.lockVault();
-			}
-		});
+		if (this.browser.alarms?.onAlarm) {
+			this.browser.alarms.onAlarm.addListener((alarm) => {
+				if (alarm.name === 'auto-lock') {
+					this.lockVault();
+				}
+			});
+		} else {
+			console.warn('Alarms API is not available in this context.');
+		}
 	}
 
 	private async handleMessage(message: Message, sender: any): Promise<any> {
@@ -77,6 +82,8 @@ class BackgroundService {
 					return await this.exportData();
 				case 'IMPORT_DATA':
 					return await this.importData(message.data.importData);
+				case 'CHECK_LOCK_STATUS':
+					return await this.checkLockStatus();
 				default:
 					throw new Error(`Unknown message type: ${message.type}`);
 			}

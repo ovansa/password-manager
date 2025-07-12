@@ -7,6 +7,7 @@ class ContentScript {
 	private browser: any;
 
 	constructor() {
+		this.browser = (globalThis as any).browser || (globalThis as any).chrome;
 		this.observer = new MutationObserver(() => this.detectLoginForms());
 		this.initialize();
 	}

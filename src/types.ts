@@ -22,11 +22,12 @@ export interface VaultData {
 }
 
 export interface UserSettings {
-	autoFill: boolean;
-	autoSave: boolean;
+	autoFill?: boolean;
+	autoSave?: boolean;
 	lockTimeout: number; // in minutes
-	syncEnabled: boolean;
+	syncEnabled?: boolean;
 	syncProvider?: 'google' | 'github' | 'custom';
+	autoLockEnabled?: boolean;
 	passwordGenerator: {
 		length: number;
 		includeUppercase: boolean;
@@ -75,7 +76,8 @@ export interface Message {
 		| 'CHECK_FORMS'
 		| 'SYNC_DATA'
 		| 'EXPORT_DATA'
-		| 'IMPORT_DATA';
+		| 'IMPORT_DATA'
+		| 'CHECK_LOCK_STATUS';
 	data?: any;
 	tabId?: number;
 }

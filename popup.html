@@ -1,417 +1,756 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 	<head>
-		<meta charset="utf-8" />
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>SecureVault Password Manager</title>
 		<style>
 			* {
-				box-sizing: border-box;
 				margin: 0;
 				padding: 0;
+				box-sizing: border-box;
 			}
 
 			body {
-				width: 300px;
-				min-height: 280px;
+				width: 350px;
+				min-height: 400px;
 				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
 					sans-serif;
 				background: #f8f9fa;
 				color: #333;
 			}
 
+			.container {
+				padding: 20px;
+			}
+
 			.header {
-				padding: 15px;
-				text-align: center;
-				background: #fff;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: 20px;
+				padding-bottom: 15px;
 				border-bottom: 1px solid #e9ecef;
 			}
 
-			.header h1 {
-				font-size: 18px;
-				font-weight: 500;
-				margin-bottom: 3px;
-				color: #333;
-			}
-
-			.header p {
-				font-size: 11px;
-				color: #666;
-			}
-
-			.content {
-				padding: 15px;
-			}
-
-			.fill-button {
-				width: 100%;
-				padding: 12px;
-				background: #007bff;
-				color: white;
-				border: none;
-				font-size: 14px;
-				font-weight: 500;
-				cursor: pointer;
-				transition: background-color 0.2s ease;
-			}
-
-			.fill-button:hover {
-				background: #0056b3;
-			}
-
-			.fill-button:disabled {
-				opacity: 0.6;
-				cursor: not-allowed;
-			}
-
-			.status {
-				margin-top: 12px;
-				padding: 8px;
-				font-size: 12px;
-				text-align: center;
-				border: 1px solid #e9ecef;
-			}
-
-			.status-ready {
-				background: #f8f9fa;
-				color: #666;
-			}
-
-			.status-info {
-				background: #e3f2fd;
-				color: #1976d2;
-				border-color: #bbdefb;
-			}
-
-			.status-success {
-				background: #e8f5e8;
-				color: #388e3c;
-				border-color: #c8e6c9;
-			}
-
-			.status-error {
-				background: #ffebee;
-				color: #d32f2f;
-				border-color: #ffcdd2;
-			}
-
-			.settings-row {
+			.logo {
 				display: flex;
+				align-items: center;
 				gap: 8px;
-				margin-top: 12px;
 			}
 
-			.settings-button {
-				flex: 1;
-				padding: 8px;
-				background: #fff;
-				color: #333;
-				border: 1px solid #e9ecef;
-				font-size: 11px;
-				cursor: pointer;
-				transition: background-color 0.2s ease;
-			}
-
-			.settings-button:hover {
-				background: #f8f9fa;
-			}
-
-			.settings-button.active {
+			.logo-icon {
+				width: 24px;
+				height: 24px;
 				background: #007bff;
+				border-radius: 6px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
 				color: white;
+				font-size: 12px;
+			}
+
+			.logo-text {
+				font-weight: 600;
+				font-size: 16px;
+			}
+
+			.lock-status {
+				display: flex;
+				align-items: center;
+				gap: 5px;
+				font-size: 12px;
+			}
+
+			.status-dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background: #28a745;
+			}
+
+			.status-dot.locked {
+				background: #dc3545;
+			}
+
+			.search-container {
+				position: relative;
+				margin-bottom: 15px;
+			}
+
+			.search-input {
+				width: 100%;
+				padding: 10px 35px 10px 12px;
+				border: 1px solid #ddd;
+				border-radius: 6px;
+				font-size: 14px;
+				background: white;
+			}
+
+			.search-icon {
+				position: absolute;
+				right: 10px;
+				top: 50%;
+				transform: translateY(-50%);
+				color: #6c757d;
+			}
+
+			.tabs {
+				display: flex;
+				border-bottom: 1px solid #e9ecef;
+				margin-bottom: 15px;
+			}
+
+			.tab {
+				flex: 1;
+				padding: 8px 0;
+				text-align: center;
+				background: none;
+				border: none;
+				cursor: pointer;
+				font-size: 14px;
+				color: #6c757d;
+				border-bottom: 2px solid transparent;
+				transition: all 0.2s;
+			}
+
+			.tab.active {
+				color: #007bff;
+				border-bottom-color: #007bff;
+			}
+
+			.tab:hover {
+				color: #007bff;
+			}
+
+			.password-list {
+				max-height: 200px;
+				overflow-y: auto;
+				margin-bottom: 15px;
+			}
+
+			.password-item {
+				display: flex;
+				align-items: center;
+				padding: 10px;
+				background: white;
+				border: 1px solid #e9ecef;
+				border-radius: 6px;
+				margin-bottom: 8px;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+
+			.password-item:hover {
+				background: #f8f9fa;
 				border-color: #007bff;
 			}
 
-			.stats {
-				margin-top: 12px;
-				padding: 10px;
-				background: #fff;
-				border: 1px solid #e9ecef;
-			}
-
-			.stats h3 {
-				font-size: 11px;
-				margin-bottom: 6px;
-				color: #333;
-			}
-
-			.stat-item {
+			.password-item-icon {
+				width: 32px;
+				height: 32px;
+				background: #e9ecef;
+				border-radius: 50%;
 				display: flex;
-				justify-content: space-between;
-				font-size: 10px;
-				margin-bottom: 3px;
-				color: #666;
+				align-items: center;
+				justify-content: center;
+				margin-right: 10px;
+				font-size: 14px;
 			}
 
-			.settings-panel {
-				margin-top: 12px;
-				padding: 16px;
-				background: #fff;
-				border: 1px solid #e9ecef;
+			.password-item-content {
+				flex: 1;
+			}
+
+			.password-item-title {
+				font-weight: 500;
+				font-size: 14px;
+				margin-bottom: 2px;
+			}
+
+			.password-item-username {
+				font-size: 12px;
+				color: #6c757d;
+			}
+
+			.password-item-actions {
+				display: flex;
+				gap: 5px;
+			}
+
+			.btn {
+				padding: 6px 12px;
+				border: none;
 				border-radius: 4px;
+				cursor: pointer;
+				font-size: 12px;
+				transition: all 0.2s;
+			}
+
+			.btn-primary {
+				background: #007bff;
+				color: white;
+			}
+
+			.btn-primary:hover {
+				background: #0056b3;
+			}
+
+			.btn-secondary {
+				background: #6c757d;
+				color: white;
+			}
+
+			.btn-secondary:hover {
+				background: #5a6268;
+			}
+
+			.btn-success {
+				background: #28a745;
+				color: white;
+			}
+
+			.btn-success:hover {
+				background: #218838;
+			}
+
+			.btn-danger {
+				background: #dc3545;
+				color: white;
+			}
+
+			.btn-danger:hover {
+				background: #c82333;
+			}
+
+			.action-buttons {
+				display: flex;
+				gap: 8px;
+				margin-top: 15px;
+			}
+
+			.action-buttons .btn {
+				flex: 1;
+				padding: 10px;
+				font-size: 14px;
+			}
+
+			.unlock-screen {
+				text-align: center;
+				padding: 20px 0;
+			}
+
+			.unlock-icon {
+				width: 48px;
+				height: 48px;
+				background: #e9ecef;
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin: 0 auto 15px;
+				font-size: 24px;
+			}
+
+			.unlock-title {
+				font-size: 18px;
+				font-weight: 600;
+				margin-bottom: 10px;
+			}
+
+			.unlock-subtitle {
+				font-size: 14px;
+				color: #6c757d;
+				margin-bottom: 20px;
+			}
+
+			.password-input {
+				width: 100%;
+				padding: 10px;
+				border: 1px solid #ddd;
+				border-radius: 6px;
+				font-size: 14px;
+				margin-bottom: 15px;
+			}
+
+			.password-strength {
+				height: 4px;
+				background: #e9ecef;
+				border-radius: 2px;
+				margin-bottom: 10px;
+				overflow: hidden;
+			}
+
+			.strength-bar {
+				height: 100%;
+				transition: width 0.3s, background-color 0.3s;
+			}
+
+			.strength-very-weak {
+				background: #dc3545;
+			}
+			.strength-weak {
+				background: #fd7e14;
+			}
+			.strength-fair {
+				background: #ffc107;
+			}
+			.strength-good {
+				background: #28a745;
+			}
+			.strength-strong {
+				background: #17a2b8;
+			}
+
+			.generator-options {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 10px;
+				margin-bottom: 15px;
+			}
+
+			.option-group {
+				display: flex;
+				align-items: center;
+				gap: 5px;
+			}
+
+			.option-group input[type='checkbox'] {
+				margin: 0;
+			}
+
+			.option-group label {
+				font-size: 12px;
+				cursor: pointer;
+			}
+
+			.length-group {
+				grid-column: span 2;
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
+			.length-input {
+				width: 60px;
+				padding: 5px;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+			}
+
+			.hidden {
 				display: none;
 			}
 
-			.settings-panel h3 {
-				font-size: 13px;
-				margin-bottom: 16px;
-				color: #333;
-				font-weight: 500;
+			.empty-state {
+				text-align: center;
+				padding: 30px 20px;
+				color: #6c757d;
+			}
+
+			.empty-state-icon {
+				font-size: 48px;
+				margin-bottom: 10px;
+			}
+
+			.error-message {
+				color: #dc3545;
+				font-size: 12px;
+				margin-top: 5px;
+			}
+
+			.success-message {
+				color: #28a745;
+				font-size: 12px;
+				margin-top: 5px;
 			}
 
 			.form-group {
-				margin-bottom: 16px;
-			}
-
-			.form-group:last-of-type {
-				margin-bottom: 20px;
+				margin-bottom: 15px;
 			}
 
 			.form-group label {
 				display: block;
-				font-size: 11px;
-				margin-bottom: 4px;
-				color: #666;
+				margin-bottom: 5px;
 				font-weight: 500;
+				font-size: 14px;
 			}
 
-			.form-group input {
+			.form-group input,
+			.form-group select {
 				width: 100%;
-				padding: 8px 10px;
-				font-size: 12px;
-				border: 1px solid #e9ecef;
+				padding: 8px;
+				border: 1px solid #ddd;
 				border-radius: 4px;
-				background: #fff;
-				transition: border-color 0.2s ease;
+				font-size: 14px;
 			}
 
-			.form-group input:focus {
+			.form-group input:focus,
+			.form-group select:focus {
 				outline: none;
 				border-color: #007bff;
+				box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 			}
 
-			.form-group input::placeholder {
-				color: #999;
-			}
-
-			.help-text {
-				font-size: 10px;
-				color: #999;
-				margin-top: 4px;
-			}
-
-			.actions {
-				display: flex;
-				gap: 8px;
-				margin-top: 16px;
-			}
-
-			.save-button {
-				flex: 1;
-				padding: 8px 12px;
-				background: #28a745;
-				color: white;
-				border: none;
-				font-size: 11px;
-				font-weight: 500;
-				cursor: pointer;
+			.generated-password {
+				font-family: monospace;
+				font-size: 14px;
+				padding: 10px;
+				background: #f8f9fa;
+				border: 1px solid #e9ecef;
 				border-radius: 4px;
-				transition: all 0.2s ease;
+				margin-bottom: 10px;
+				word-break: break-all;
+			}
+
+			.strength-label {
+				font-size: 12px;
+				color: #6c757d;
+				margin-bottom: 5px;
+			}
+
+			.settings-group {
+				margin-bottom: 20px;
+			}
+
+			.settings-group h3 {
+				font-size: 16px;
+				margin-bottom: 10px;
+				color: #333;
+			}
+
+			.toggle-switch {
 				display: flex;
 				align-items: center;
-				justify-content: center;
-				gap: 4px;
+				justify-content: space-between;
+				margin-bottom: 10px;
 			}
 
-			.save-button:hover {
-				background: #218838;
+			.toggle-switch label {
+				font-size: 14px;
+				color: #333;
 			}
 
-			.save-button:disabled {
-				background: #6c757d;
-				cursor: not-allowed;
-			}
-
-			.save-button.saving {
-				background: #ffc107;
-				color: #212529;
-			}
-
-			.save-button.success {
-				background: #28a745;
-				animation: success-pulse 0.3s ease;
-			}
-
-			@keyframes success-pulse {
-				0% {
-					transform: scale(1);
-				}
-				50% {
-					transform: scale(1.05);
-				}
-				100% {
-					transform: scale(1);
-				}
-			}
-
-			.back-button {
-				flex: 1;
-				padding: 8px 12px;
-				background: #6c757d;
-				color: white;
-				border: none;
-				font-size: 11px;
-				font-weight: 500;
-				cursor: pointer;
-				border-radius: 4px;
-				transition: background-color 0.2s ease;
-			}
-
-			.back-button:hover {
-				background: #5a6268;
-			}
-
-			.version {
-				text-align: center;
-				font-size: 9px;
-				color: #999;
-				margin-top: 12px;
-			}
-
-			.loading {
-				animation: pulse 1.5s ease-in-out infinite;
-			}
-
-			@keyframes pulse {
-				0% {
-					opacity: 1;
-				}
-				50% {
-					opacity: 0.5;
-				}
-				100% {
-					opacity: 1;
-				}
-			}
-
-			.icon {
-				width: 16px;
-				height: 16px;
-				margin-right: 8px;
-				vertical-align: middle;
-			}
-
-			.spinner {
-				width: 12px;
-				height: 12px;
-				border: 2px solid transparent;
-				border-top: 2px solid currentColor;
-				border-radius: 50%;
-				animation: spin 1s linear infinite;
-			}
-
-			@keyframes spin {
-				0% {
-					transform: rotate(0deg);
-				}
-				100% {
-					transform: rotate(360deg);
-				}
-			}
-
-			.checkmark {
-				width: 12px;
-				height: 12px;
-				border-radius: 50%;
+			.switch {
+				position: relative;
 				display: inline-block;
-				stroke-width: 2;
-				stroke: currentColor;
-				stroke-miterlimit: 10;
-				animation: checkmark 0.6s ease-in-out;
+				width: 50px;
+				height: 24px;
 			}
 
-			@keyframes checkmark {
-				0% {
-					stroke-dasharray: 0 50;
-				}
-				100% {
-					stroke-dasharray: 50 0;
-				}
+			.switch input {
+				opacity: 0;
+				width: 0;
+				height: 0;
+			}
+
+			.slider {
+				position: absolute;
+				cursor: pointer;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background-color: #ccc;
+				transition: 0.4s;
+				border-radius: 24px;
+			}
+
+			.slider:before {
+				position: absolute;
+				content: '';
+				height: 18px;
+				width: 18px;
+				left: 3px;
+				bottom: 3px;
+				background-color: white;
+				transition: 0.4s;
+				border-radius: 50%;
+			}
+
+			input:checked + .slider {
+				background-color: #007bff;
+			}
+
+			input:checked + .slider:before {
+				transform: translateX(26px);
 			}
 		</style>
 	</head>
 	<body>
-		<div class="header">
-			<h1>🎯 Sabi Fill</h1>
-			<p>Smart Form Filler for Testing</p>
-		</div>
+		<div class="container">
+			<div class="header">
+				<div class="logo">
+					<div class="logo-icon">🔒</div>
+					<div class="logo-text">SecureVault</div>
+				</div>
+				<div class="lock-status">
+					<div class="status-dot" id="statusDot"></div>
+					<span id="statusText">Locked</span>
+				</div>
+			</div>
 
-		<div class="content">
-			<div id="main-panel">
-				<button id="fill" class="fill-button">
-					<span class="icon">⚡</span>Fill Form
+			<!-- Unlock Screen -->
+			<div id="unlockScreen" class="unlock-screen">
+				<div class="unlock-icon">🔐</div>
+				<div class="unlock-title">Unlock Your Vault</div>
+				<div class="unlock-subtitle">
+					Enter your master password to access your passwords
+				</div>
+				<input
+					type="password"
+					id="masterPassword"
+					class="password-input"
+					placeholder="Master Password"
+				/>
+				<div id="unlockError" class="error-message hidden"></div>
+				<button
+					id="unlockButton"
+					class="btn btn-primary"
+					style="width: 100%; padding: 10px; font-size: 14px"
+				>
+					Unlock Vault
 				</button>
+			</div>
 
-				<div id="status" class="status status-ready">Ready to fill forms</div>
-
-				<div class="settings-row">
-					<button id="settings" class="settings-button">
-						<span class="icon">⚙️</span>Settings
-					</button>
-					<button id="history" class="settings-button">
-						<span class="icon">📊</span>Stats
-					</button>
+			<!-- Main Interface -->
+			<div id="mainInterface" class="hidden">
+				<!-- Search -->
+				<div class="search-container">
+					<input
+						type="text"
+						id="searchInput"
+						class="search-input"
+						placeholder="Search passwords..."
+					/>
+					<div class="search-icon">🔍</div>
 				</div>
 
-				<div class="stats" id="stats-panel" style="display: none">
-					<h3>📈 Session Stats</h3>
-					<div class="stat-item">
-						<span>Forms Filled:</span>
-						<span id="forms-count">0</span>
+				<!-- Tabs -->
+				<div class="tabs">
+					<button class="tab active" data-tab="passwords">Passwords</button>
+					<button class="tab" data-tab="generator">Generator</button>
+					<button class="tab" data-tab="settings">Settings</button>
+				</div>
+
+				<!-- Passwords Tab -->
+				<div id="passwordsTab" class="tab-content">
+					<div class="password-list" id="passwordList">
+						<!-- Password items will be inserted here -->
 					</div>
-					<div class="stat-item">
-						<span>Fields Filled:</span>
-						<span id="fields-count">0</span>
+
+					<div id="emptyState" class="empty-state hidden">
+						<div class="empty-state-icon">🔑</div>
+						<div>No passwords saved yet</div>
 					</div>
-					<div class="stat-item">
-						<span>Success Rate:</span>
-						<span id="success-rate">100%</span>
+
+					<div class="action-buttons">
+						<button id="addPasswordButton" class="btn btn-primary">
+							Add Password
+						</button>
+						<button id="lockVaultButton" class="btn btn-secondary">
+							Lock Vault
+						</button>
+					</div>
+				</div>
+
+				<!-- Generator Tab -->
+				<div id="generatorTab" class="tab-content hidden">
+					<div class="form-group">
+						<div class="strength-label">Generated Password</div>
+						<div id="generatedPassword" class="generated-password">
+							Click generate to create a password
+						</div>
+					</div>
+
+					<div class="form-group">
+						<div class="strength-label">Password Strength</div>
+						<div class="password-strength">
+							<div
+								id="strengthBar"
+								class="strength-bar"
+								style="width: 0%"
+							></div>
+						</div>
+					</div>
+
+					<div class="generator-options">
+						<div class="option-group">
+							<input type="checkbox" id="includeUppercase" checked />
+							<label for="includeUppercase">Uppercase</label>
+						</div>
+						<div class="option-group">
+							<input type="checkbox" id="includeLowercase" checked />
+							<label for="includeLowercase">Lowercase</label>
+						</div>
+						<div class="option-group">
+							<input type="checkbox" id="includeNumbers" checked />
+							<label for="includeNumbers">Numbers</label>
+						</div>
+						<div class="option-group">
+							<input type="checkbox" id="includeSymbols" checked />
+							<label for="includeSymbols">Symbols</label>
+						</div>
+						<div class="length-group">
+							<label for="passwordLength">Length:</label>
+							<input
+								type="number"
+								id="passwordLength"
+								class="length-input"
+								value="16"
+								min="4"
+								max="128"
+							/>
+						</div>
+					</div>
+
+					<div class="action-buttons">
+						<button id="generateButton" class="btn btn-primary">
+							Generate
+						</button>
+						<button id="copyPasswordButton" class="btn btn-success">
+							Copy
+						</button>
+					</div>
+				</div>
+
+				<!-- Settings Tab -->
+				<div id="settingsTab" class="tab-content hidden">
+					<div class="settings-group">
+						<h3>Security</h3>
+						<div class="toggle-switch">
+							<label>Auto-lock after idle</label>
+							<label class="switch">
+								<input type="checkbox" id="autoLockEnabled" checked />
+								<span class="slider"></span>
+							</label>
+						</div>
+						<div class="form-group">
+							<label for="lockTimeout">Lock timeout (minutes)</label>
+							<select id="lockTimeout">
+								<option value="5">5 minutes</option>
+								<option value="15" selected>15 minutes</option>
+								<option value="30">30 minutes</option>
+								<option value="60">1 hour</option>
+								<option value="0">Never</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="settings-group">
+						<h3>Data Management</h3>
+						<div class="action-buttons">
+							<button id="exportButton" class="btn btn-secondary">
+								Export
+							</button>
+							<button id="importButton" class="btn btn-secondary">
+								Import
+							</button>
+						</div>
+						<input
+							type="file"
+							id="importFile"
+							accept=".json"
+							style="display: none"
+						/>
+					</div>
+
+					<div class="settings-group">
+						<h3>About</h3>
+						<div style="font-size: 12px; color: #6c757d; line-height: 1.4">
+							SecureVault Password Manager<br />
+							Version 1.0.0<br />
+							Keep your passwords secure and organized
+						</div>
 					</div>
 				</div>
 			</div>
 
-			<div class="settings-panel" id="settings-panel">
-				<h3>Settings</h3>
+			<!-- Add/Edit Password Modal -->
+			<div
+				id="passwordModal"
+				class="hidden"
+				style="
+					position: fixed;
+					top: 0;
+					left: 0;
+					width: 100%;
+					height: 100%;
+					background: rgba(0, 0, 0, 0.5);
+					z-index: 1000;
+				"
+			>
+				<div
+					style="
+						position: absolute;
+						top: 50%;
+						left: 50%;
+						transform: translate(-50%, -50%);
+						background: white;
+						padding: 20px;
+						border-radius: 8px;
+						width: 90%;
+						max-width: 400px;
+					"
+				>
+					<h3 id="modalTitle" style="margin-bottom: 15px">Add New Password</h3>
 
-				<div class="form-group">
-					<label for="email-domain">Email Domain</label>
-					<input
-						type="text"
-						id="email-domain"
-						placeholder="gmail.com"
-						value="gmail.com"
-					/>
-					<div class="help-text">Default domain for generated emails</div>
-				</div>
+					<div class="form-group">
+						<label for="passwordTitle">Title</label>
+						<input
+							type="text"
+							id="passwordTitle"
+							placeholder="e.g., Gmail, Facebook"
+						/>
+					</div>
 
-				<div class="form-group">
-					<label for="custom-password">Custom Password</label>
-					<input
-						type="text"
-						id="custom-password"
-						placeholder="Leave blank for random"
-					/>
-					<div class="help-text">
-						Use same password for all forms (min 8 chars)
+					<div class="form-group">
+						<label for="passwordUrl">URL</label>
+						<input
+							type="url"
+							id="passwordUrl"
+							placeholder="https://example.com"
+						/>
+					</div>
+
+					<div class="form-group">
+						<label for="passwordUsername">Username/Email</label>
+						<input
+							type="text"
+							id="passwordUsername"
+							placeholder="your@email.com"
+						/>
+					</div>
+
+					<div class="form-group">
+						<label for="passwordPassword">Password</label>
+						<input
+							type="password"
+							id="passwordPassword"
+							placeholder="Enter password"
+						/>
+					</div>
+
+					<div class="form-group">
+						<label for="passwordNotes">Notes (optional)</label>
+						<input
+							type="text"
+							id="passwordNotes"
+							placeholder="Additional notes"
+						/>
+					</div>
+
+					<div class="action-buttons">
+						<button id="savePasswordButton" class="btn btn-primary">
+							Save
+						</button>
+						<button id="cancelPasswordButton" class="btn btn-secondary">
+							Cancel
+						</button>
 					</div>
 				</div>
-
-				<div class="actions">
-					<button id="back-to-main" class="back-button">Cancel</button>
-					<button id="save-settings" class="save-button">
-						<span class="save-text">Save</span>
-					</button>
-				</div>
 			</div>
-
-			<div class="version">v1.0 – Because filling forms is boring 💤</div>
 		</div>
 
 		<script src="popup.js"></script>
