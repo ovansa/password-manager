@@ -382,8 +382,12 @@ class PopupManager {
 	}
 
 	private renderPasswordList(): void {
+		console.log('Current asswords ', this.state.passwords);
+		console.log('PasswordManager: RenderPassword: ', this.elements);
 		const passwordList = this.elements.passwordList;
+
 		const emptyState = this.elements.emptyState;
+		console.log('Filtered passwords ', this.state.filteredPasswords);
 
 		if (this.state.filteredPasswords.length === 0) {
 			passwordList.innerHTML = '';
@@ -495,9 +499,11 @@ class PopupManager {
 				updatedAt: new Date().toISOString(),
 			};
 
+			console.log('PasswordEntry: ', passwordEntry);
+
 			const response = await this.sendMessage({
 				type: 'SAVE_ENTRY',
-				data: { password: passwordEntry },
+				data: { entry: passwordEntry },
 			});
 
 			if (response.success) {

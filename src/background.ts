@@ -191,7 +191,11 @@ class BackgroundService {
 
 	private async unlockVault(
 		masterPassword: string
-	): Promise<{ success: boolean; error?: string }> {
+	): Promise<{
+		success: boolean;
+		passwords?: PasswordEntry[];
+		error?: string;
+	}> {
 		try {
 			const salt = await this.getVaultSalt();
 			if (!salt) return { success: false, error: 'Vault not found' };
@@ -207,7 +211,10 @@ class BackgroundService {
 				tempSessionKey: masterKey,
 			});
 			this.setupAutoLock(vault.settings.lockTimeout);
-			return { success: true };
+
+			const passwords = await storageService.getEntries(masterKey);
+
+			return { success: true, passwords };
 		} catch (error) {
 			return { success: false, error: error.message };
 		}
@@ -361,6 +368,8 @@ class BackgroundService {
 		isLocked: boolean;
 		needsSetup: boolean;
 		vaultExists: boolean;
+		passwords?: PasswordEntry[];
+		settings?: UserSettings;
 	}> {
 		try {
 			const vaultExists = await this.vaultExists();
@@ -384,7 +393,19 @@ class BackgroundService {
 
 				// Session is valid, restore the key
 				this.currentMasterKey = sessionData.tempSessionKey;
-				return { isLocked: false, needsSetup: false, vaultExists: true };
+
+				const [passwords, vault] = await Promise.all([
+					storageService.getEntries(this.currentMasterKey),
+					storageService.loadVault(this.currentMasterKey),
+				]);
+
+				return {
+					isLocked: false,
+					needsSetup: false,
+					vaultExists: true,
+					passwords,
+					settings: vault?.settings,
+				};
 			}
 
 			return { isLocked: true, needsSetup: false, vaultExists: true };

@@ -53,14 +53,24 @@ export class StorageService {
 			throw new Error('Vault not found or cannot be decrypted');
 		}
 
-		const existingIndex = vault.entries.findIndex((e) => e.id === entry.id);
-		if (existingIndex >= 0) {
-			vault.entries[existingIndex] = { ...entry, updatedAt: Date.now() };
+		console.log('Vault Entries', vault.entries);
+		console.log('Vault Entries Length', vault.entries.length);
+
+		if (vault.entries.length > 1) {
+			const existingIndex = vault.entries.findIndex((e) => e.id === entry.id);
+			if (existingIndex >= 0) {
+				vault.entries[existingIndex] = { ...entry, updatedAt: Date.now() };
+			} else {
+				vault.entries.push(entry);
+				console.log('First Else Vault Entries', vault);
+			}
 		} else {
 			vault.entries.push(entry);
+			console.log('Else Vault Entries', vault);
+
+			vault.updatedAt = Date.now();
 		}
 
-		vault.updatedAt = Date.now();
 		await this.saveVault(vault, masterKey);
 	}
 
