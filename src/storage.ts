@@ -40,7 +40,7 @@ export class StorageService {
 				encryptedData,
 				masterKey
 			);
-			return JSON.parse(encryptedData) as VaultData;
+			return JSON.parse(decryptedData) as VaultData; // Fixed: using decryptedData instead of encryptedData
 		} catch (error) {
 			console.error('Failed to decrypt vault data:', error);
 			return null;
@@ -128,6 +128,8 @@ export class StorageService {
 		const masterKey = await cryptoService.deriveKey(masterPassword, salt);
 		await this.saveVault(vaultData, masterKey);
 
+		await this.browser.storage.local.set({ vault_salt: salt });
+
 		return vaultData;
 	}
 
@@ -142,21 +144,31 @@ export class StorageService {
 		}
 
 		try {
-			// Try to get salt from a temporary decrypt attempt
-			const tempVault = await this.loadVault(
-				await cryptoService.deriveKey(password, '')
-			);
-			if (!tempVault) {
-				// If that fails, we need to try different approach
-				// For now, let's assume we store salt separately or handle differently
-				return false;
+			// First try to get salt from local storage
+			const saltResult = await this.browser.storage.local.get(['vault_salt']);
+			const salt = saltResult.vault_salt;
+
+			if (!salt) {
+				// Fallback to trying to decrypt with empty salt to extract salt
+				const tempKey = await cryptoService.deriveKey(password, '');
+				const tempVault = await this.loadVault(tempKey);
+				if (!tempVault) return false;
+
+				const masterPasswordHash = await cryptoService.hash(
+					password,
+					tempVault.salt
+				);
+				return masterPasswordHash === tempVault.masterPasswordHash;
 			}
 
-			const masterPasswordHash = await cryptoService.hash(
-				password,
-				tempVault.salt
+			const masterPasswordHash = await cryptoService.hash(password, salt);
+			const tempKey = await cryptoService.deriveKey(password, salt);
+			const tempVault = await this.loadVault(tempKey);
+
+			return (
+				tempVault !== null &&
+				masterPasswordHash === tempVault.masterPasswordHash
 			);
-			return masterPasswordHash === tempVault.masterPasswordHash;
 		} catch (error) {
 			return false;
 		}

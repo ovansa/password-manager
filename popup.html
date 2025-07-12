@@ -241,6 +241,11 @@
 				padding: 20px 0;
 			}
 
+			.setup-screen {
+				text-align: center;
+				padding: 20px 0;
+			}
+
 			.unlock-icon {
 				width: 48px;
 				height: 48px;
@@ -476,6 +481,22 @@
 			input:checked + .slider:before {
 				transform: translateX(26px);
 			}
+
+			.password-requirements {
+				font-size: 12px;
+				color: #6c757d;
+				margin-bottom: 15px;
+				line-height: 1.4;
+			}
+
+			.password-requirements ul {
+				margin: 5px 0;
+				padding-left: 20px;
+			}
+
+			.password-requirements li {
+				margin: 2px 0;
+			}
 		</style>
 	</head>
 	<body>
@@ -489,6 +510,44 @@
 					<div class="status-dot" id="statusDot"></div>
 					<span id="statusText">Locked</span>
 				</div>
+			</div>
+
+			<!-- Setup Screen (First Time) -->
+			<div id="setupScreen" class="setup-screen hidden">
+				<div class="unlock-icon">🔐</div>
+				<div class="unlock-title">Setup Your Vault</div>
+				<div class="unlock-subtitle">
+					Create a master password to secure your vault
+				</div>
+				<div class="password-requirements">
+					Your master password should be:
+					<ul>
+						<li>At least 8 characters long</li>
+						<li>Include uppercase and lowercase letters</li>
+						<li>Include numbers and special characters</li>
+						<li>Easy for you to remember but hard to guess</li>
+					</ul>
+				</div>
+				<input
+					type="password"
+					id="setupPassword"
+					class="password-input"
+					placeholder="Create Master Password"
+				/>
+				<input
+					type="password"
+					id="confirmPassword"
+					class="password-input"
+					placeholder="Confirm Master Password"
+				/>
+				<div id="setupError" class="error-message hidden"></div>
+				<button
+					id="setupButton"
+					class="btn btn-primary"
+					style="width: 100%; padding: 10px; font-size: 14px"
+				>
+					Create Vault
+				</button>
 			</div>
 
 			<!-- Unlock Screen -->

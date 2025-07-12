@@ -71,12 +71,15 @@ export interface Message {
 		| 'DELETE_ENTRY'
 		| 'UNLOCK_VAULT'
 		| 'LOCK_VAULT'
+		| 'CREATE_VAULT'
 		| 'GENERATE_PASSWORD'
 		| 'AUTO_FILL'
 		| 'CHECK_FORMS'
 		| 'SYNC_DATA'
 		| 'EXPORT_DATA'
 		| 'IMPORT_DATA'
+		| 'GET_SETTINGS'
+		| 'UPDATE_SETTINGS'
 		| 'CHECK_LOCK_STATUS';
 	data?: any;
 	tabId?: number;

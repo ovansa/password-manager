@@ -58,8 +58,11 @@ class BackgroundService {
 	}
 
 	private async handleMessage(message: Message, sender: any): Promise<any> {
+		console.log('[PasswordManager: Message]', message);
 		try {
 			switch (message.type) {
+				case 'CREATE_VAULT':
+					return await this.createVault(message.data.masterPassword);
 				case 'UNLOCK_VAULT':
 					return await this.unlockVault(message.data.masterPassword);
 				case 'LOCK_VAULT':
@@ -84,12 +87,105 @@ class BackgroundService {
 					return await this.importData(message.data.importData);
 				case 'CHECK_LOCK_STATUS':
 					return await this.checkLockStatus();
+				case 'GET_SETTINGS':
+					return await this.getSettings();
+				case 'UPDATE_SETTINGS':
+					return await this.updateSettings(message.data.settings);
 				default:
 					throw new Error(`Unknown message type: ${message.type}`);
 			}
 		} catch (error) {
 			console.error('Background service error:', error);
 			return { error: error.message };
+		}
+	}
+
+	private async createVault(
+		masterPassword: string
+	): Promise<{ success: boolean; error?: string }> {
+		try {
+			const defaultSettings: UserSettings = {
+				lockTimeout: 15,
+				autoLockEnabled: true,
+				passwordGenerator: {
+					length: 16,
+					includeUppercase: true,
+					includeLowercase: true,
+					includeNumbers: true,
+					includeSymbols: true,
+					excludeSimilar: true,
+				},
+			};
+
+			// Call storage service to create vault
+			const vaultData = await storageService.createVault(
+				masterPassword,
+				defaultSettings
+			);
+
+			// Store vault salt for unlocking later
+			await this.browser.storage.local.set({ vault_salt: vaultData.salt });
+
+			// Derive the master key again (used for session)
+			const masterKey = await cryptoService.deriveKey(
+				masterPassword,
+				vaultData.salt
+			);
+			this.currentMasterKey = masterKey;
+
+			// Save session data
+			await storageService.saveSessionData({
+				isLocked: false,
+				tempSessionKey: masterKey,
+				lastActivity: Date.now(),
+			});
+
+			// Setup auto-lock
+			this.setupAutoLock(defaultSettings.lockTimeout);
+
+			return { success: true };
+		} catch (error) {
+			console.error('Error creating vault:', error);
+			return { success: false, error: error.message };
+		}
+	}
+
+	private async updateSettings(
+		settings: UserSettings
+	): Promise<{ success: boolean }> {
+		try {
+			if (!this.currentMasterKey) throw new Error('Vault is locked');
+
+			// Load current vault
+			const vault = await storageService.loadVault(this.currentMasterKey);
+			if (!vault) throw new Error('Vault not found');
+
+			// Update settings
+			vault.settings = settings;
+			vault.updatedAt = Date.now();
+
+			// Save updated vault
+			await storageService.saveVault(vault, this.currentMasterKey);
+
+			// Update auto-lock timer - this is the correct place for setupAutoLock
+			this.setupAutoLock(settings.lockTimeout);
+
+			return { success: true };
+		} catch (error) {
+			console.error('Error updating settings:', error);
+			return { success: false, error: error.message };
+		}
+	}
+
+	private async getSettings(): Promise<UserSettings | null> {
+		try {
+			if (!this.currentMasterKey) return null;
+
+			const vault = await storageService.loadVault(this.currentMasterKey);
+			return vault?.settings || null;
+		} catch (error) {
+			console.error('Error getting settings:', error);
+			return null;
 		}
 	}
 
@@ -121,10 +217,13 @@ class BackgroundService {
 		this.currentMasterKey = null;
 		await storageService.clearSessionData();
 
-		if (this.lockTimeoutId) clearTimeout(this.lockTimeoutId);
-		this.lockTimeoutId = null;
-
+		// Clear any existing timeout or alarm
+		if (this.lockTimeoutId) {
+			clearTimeout(this.lockTimeoutId);
+			this.lockTimeoutId = null;
+		}
 		this.browser.alarms.clear('auto-lock');
+
 		return { success: true };
 	}
 
@@ -238,18 +337,69 @@ class BackgroundService {
 	}
 
 	private async setupAutoLock(lockTimeout: number): Promise<void> {
+		// Clear any existing timeout or alarm
+		if (this.lockTimeoutId) {
+			clearTimeout(this.lockTimeoutId);
+			this.lockTimeoutId = null;
+		}
+		this.browser.alarms.clear('auto-lock');
+
+		// Only set up auto-lock if timeout is greater than 0
 		if (lockTimeout > 0) {
-			this.browser.alarms.create('auto-lock', { delayInMinutes: lockTimeout });
+			// Set both a timeout and an alarm for redundancy
+			this.lockTimeoutId = setTimeout(() => {
+				this.lockVault();
+			}, lockTimeout * 60 * 1000); // Convert minutes to milliseconds
+
+			this.browser.alarms.create('auto-lock', {
+				delayInMinutes: lockTimeout,
+			});
 		}
 	}
 
-	private async checkLockStatus(): Promise<void> {
-		const sessionData = await storageService.getSessionData();
-		if (sessionData?.tempSessionKey && !sessionData.isLocked) {
-			this.currentMasterKey = sessionData.tempSessionKey;
-			const sessionAge = Date.now() - sessionData.lastActivity;
-			const maxAge = 24 * 60 * 60 * 1000;
-			if (sessionAge > maxAge) await this.lockVault();
+	private async checkLockStatus(): Promise<{
+		isLocked: boolean;
+		needsSetup: boolean;
+		vaultExists: boolean;
+	}> {
+		try {
+			const vaultExists = await this.vaultExists();
+			if (!vaultExists) {
+				return { isLocked: true, needsSetup: true, vaultExists: false };
+			}
+
+			const sessionData = await storageService.getSessionData();
+
+			if (!sessionData)
+				return { isLocked: true, needsSetup: false, vaultExists: true };
+
+			if (sessionData.tempSessionKey && !sessionData.isLocked) {
+				const sessionAge = Date.now() - (sessionData.lastActivity || 0);
+				const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+				if (sessionAge > maxAge) {
+					await this.lockVault();
+					return { isLocked: true, needsSetup: false, vaultExists: true };
+				}
+
+				// Session is valid, restore the key
+				this.currentMasterKey = sessionData.tempSessionKey;
+				return { isLocked: false, needsSetup: false, vaultExists: true };
+			}
+
+			return { isLocked: true, needsSetup: false, vaultExists: true };
+		} catch (error) {
+			console.error('Error checking lock status:', error);
+			return { isLocked: true, needsSetup: false, vaultExists: true };
+		}
+	}
+
+	private async vaultExists(): Promise<boolean> {
+		try {
+			const result = await this.browser.storage.local.get(['vault_salt']);
+			return !!result.vault_salt;
+		} catch (error) {
+			return false;
 		}
 	}
 
